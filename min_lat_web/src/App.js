@@ -3,6 +3,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import {Activity, minimum_lateness} from './MinLat';
 import {Button, Card, Container, Col} from 'react-bootstrap';
 import Forms from './components/Forms';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const defaultTime = {
   formatted12: "12:00 pm",
@@ -36,6 +38,17 @@ class App extends Component {
     this.setState({[field]: val});
   }
 
+  removeFromList(item){
+    this.setState({showResult: false});
+    console.log(item.name);
+    let index = this.state.activities.findIndex(x => x.id === item.id);
+    console.log(index);
+    let copy_arr = this.state.activities;
+    copy_arr.splice(index,1);
+
+    this.setState({activities: copy_arr, answer: []})
+  }
+
   addToList(){
     let new_activity = new Activity(this.state.name, 
                                     this.state.execTime, 
@@ -66,7 +79,16 @@ class App extends Component {
       return(
           arr.map((item) => (
             <Card key={item.id} style={{padding: '20px', marginBottom: '10px'}}>
+              <Col>
               <Card.Title>{item.name}</Card.Title>
+              <div style={styles.buttondiv}>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  style={{ color: 'red', marginLeft: '10px' }}
+                  onClick={() => this.removeFromList(item)}
+                  />
+                  </div>
+                </Col>
               <Card.Text>
                 Entrega: {item.deliveryTime.formatted12}<br/>
                 Duração: {item.executionTime}h
