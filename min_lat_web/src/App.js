@@ -1,10 +1,18 @@
 import React, {Component} from 'react';
-import logo from './logo.svg';
-import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import {Activity, minimum_lateness} from './MinLat';
-import {Button, Form} from 'react-bootstrap';
-import TimeKeeper from 'react-timekeeper';
+import {Button, Card, Container, Col} from 'react-bootstrap';
+import Forms from './components/Forms';
 
+const defaultTime = {
+  formatted12: "12:00 pm",
+  formatted24: "12:00",
+  formattedSimple: "12:00",
+  hour: 12,
+  hour12: 12,
+  meridiem: "pm",
+  minute: 0,
+};
 
 class App extends Component {
   constructor(props){
@@ -14,9 +22,10 @@ class App extends Component {
       answer: [],
       name: '',
       execTime : 0,
-      deadline: new Date(),
-      showTime: false,
-      idCount: 0
+      deadline: defaultTime,
+      showForm: false,
+      idCount: 0,
+      showResult: false
     };
     this.handleChange = this.handleChange.bind(this)
   }
@@ -36,53 +45,106 @@ class App extends Component {
     this.setState({idCount: this.state.idCount + 1});
     let copy_list = this.state.activities;
     copy_list.push(new_activity);
-    this.setState({activities:copy_list});
-    console.log(this.state.activities);
+    this.setState({
+                  activities:copy_list,
+                  name: '',
+                  execTime: 0,
+                  deadline: defaultTime,
+                  showResult: false,
+                  showForm: false
+                });
   }
 
   answer(){
-    minimum_lateness(this.state.activities);
+    let result = minimum_lateness(this.state.activities);
+    this.setState({answer: result})
+    this.setState({showResult: true})
+  }
+
+  renderList(arr){
+    if(arr.length > 0){
+      return(
+          arr.map((item) => (
+            <Card key={item.id} style={{padding: '20px', marginBottom: '10px'}}>
+              <Card.Title>{item.name}</Card.Title>
+              <Card.Text>
+                Entrega: {item.deliveryTime.formatted12}<br/>
+                Duração: {item.executionTime}h
+              </Card.Text>
+            </Card>
+          ))
+      )
+    }else{
+      return(
+        <span>A lista está vazia :(</span>
+      )
+    }
   }
 
   render(){
     console.log(this.state.deadline);
     
     return(
-      <div>
-        <Form.Group>
-          <Form.Label>Name</Form.Label>
-          <Form.Control
-            type="text"
-            name="name"
-            value={this.state.name}
-            onChange={this.handleChange}
-          />
+      <Container>  
+        <h1 style={{marginTop: '20px'}}>Minimo de Atraso</h1>
 
-          <Form.Label>Tempo de execução (em horas)</Form.Label>
-          <Form.Control
-            type="number"
-            name="execTime"
-            value={this.state.execTime}
-            onChange={this.handleChange}
-          />
+        <Forms
+          show={this.state.showForm}
+          name={this.state.name}
+          execTime={this.state.execTime}
+          handleChange={this.handleChange}
+          deadline={this.state.deadline}
+          changeTime={(newTime) => this.setState({ deadline: newTime })}
+          addActivity={() => this.addToList()}
+          cancel={() => this.setState({showForm: false})}
+        />
 
-          <Form.Label>Data de entrega</Form.Label>
-          {this.state.showTime && <TimeKeeper 
-            onChange={(newTime) => this.setState({deadline: newTime})}
-            switchToMinuteOnHourSelect
-            onDoneClick={() => this.setState({showTime: false})}
-          />}
-          <span>Time is {this.state.deadline.formatted12}</span>
-          {!this.state.showTime &&
-            <button onClick={() => this.setState({showTime: true})}>Show</button>
-          }
-        </Form.Group>
-        <Button onClick={() => this.addToList()}>Adiciona na Lista de Atividades</Button>
+        <Col>
+        <div style={styles.buttondiv}>
+        <Button
+          style={styles.leftButton}
+          onClick={() => this.setState({showForm: true})}>
+            Adiciona na Lista de Atividades
+        </Button>
+        <Button
+          onClick={() => this.answer()}
+          style={styles.rightButton}>
+            Roda o algoritimo
+        </Button>
+        </div>
+        </Col>
+
         <hr/>
-        <Button onClick={() => this.answer()}>Faz a magia</Button>
 
-      </div>
+        {
+          this.state.showResult?
+          <div>
+            <h2>Ordem de mínimo atraso:</h2>
+            {this.renderList(this.state.answer)}
+          </div>
+          :
+          <div>
+            <h2>Lista de tarefas:</h2>
+            {this.renderList(this.state.activities)}
+          </div>
+        }
+
+      </Container>
   );
+  }
+}
+
+const styles={
+  leftButton: {
+    marginRight: 10,
+    fontSize: 15,
+  },
+  rightButton: {
+    fontSize: 15,
+  },
+  buttondiv: {
+    textAlign: 'right',
+    position: 'relative',
   }
 }
 

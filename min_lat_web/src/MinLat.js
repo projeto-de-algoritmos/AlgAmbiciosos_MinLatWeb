@@ -14,7 +14,12 @@ export class Activity{
 
 export function minimum_lateness(arr){
     arr = sortTimes(arr);
-    console.log(arr);
+    let t = 0;
+    let intervals = [];
+
+    for(let i = 1; i < arr.length; i++){
+        
+    }
     return arr;
 }
 
