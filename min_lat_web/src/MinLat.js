@@ -9,6 +9,7 @@ export class Activity{
         this.executionTime = executionTime;
         this.deliveryTime = deliveryTime;
         this.id = id;
+        this.lateness = 0;
     }
 }
 

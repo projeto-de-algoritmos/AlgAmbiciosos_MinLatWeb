@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {Activity, minimum_lateness} from './MinLat';
-import {Button, Card, Container, Col} from 'react-bootstrap';
+import {Button, Card, Container, Col, Row} from 'react-bootstrap';
 import Forms from './components/Forms';
+import Result from './components/Result';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
@@ -22,12 +23,15 @@ class App extends Component {
     this.state = {
       activities: [],
       answer: [],
+      userList: [],
       name: '',
       execTime : 0,
       deadline: defaultTime,
       showForm: false,
       idCount: 0,
-      showResult: false
+      color: 'white',
+      showAnswer: false,
+      isCorrect: false
     };
     this.handleChange = this.handleChange.bind(this)
   }
@@ -39,14 +43,22 @@ class App extends Component {
   }
 
   removeFromList(item){
-    this.setState({showResult: false});
-    console.log(item.name);
+    this.setState({answer: []});
     let index = this.state.activities.findIndex(x => x.id === item.id);
-    console.log(index);
     let copy_arr = this.state.activities;
     copy_arr.splice(index,1);
+    
+    this.setState({ activities: copy_arr, answer: []});
+    return this.removeFromUserList(item);
+  }
 
-    this.setState({activities: copy_arr, answer: []})
+  removeFromUserList(item){
+    this.setState({ answer: []});
+    let index = this.state.userList.findIndex(x => x.id === item.id);
+    let copy_arr = this.state.userList;
+    copy_arr.splice(index,1);
+
+    this.setState({userList: copy_arr, answer: []})
   }
 
   addToList(){
@@ -63,22 +75,48 @@ class App extends Component {
                   name: '',
                   execTime: 0,
                   deadline: defaultTime,
-                  showResult: false,
+                  answer: [],
                   showForm: false
                 });
   }
 
-  answer(){
-    let result = minimum_lateness(this.state.activities);
-    this.setState({answer: result})
-    this.setState({showResult: true})
+  addToUserList(item){
+    let index = this.state.userList.findIndex(x => x.id === item.id);    
+    if(index === -1){
+      let copy_list = this.state.userList;
+      copy_list.push(item);
+      this.setState({userList:copy_list, answer:[]});
+    }
   }
 
-  renderList(arr){
-    if(arr.length > 0){
+  answer(){
+    let result = minimum_lateness(this.state.activities);
+    this.setState({answer: result, showAnswer: true, isCorrect: this.verifyAnswer(result)})
+  }
+
+  verifyAnswer(result){
+    let equal = true;
+    if(result.length !== this.state.userList.length){
+      equal = false;
+
+    }else{
+      for(let i=0; i<result.length;i++){
+        if(result[i].id !== this.state.userList[i].id){
+          console.log('uai?');
+          
+          equal = false;
+        }
+      }
+    }
+    return equal;
+  }
+
+  renderOGList(){
+    if(this.state.activities.length > 0){
       return(
-          arr.map((item) => (
-            <Card key={item.id} style={{padding: '20px', marginBottom: '10px'}}>
+          this.state.activities.map((item) => (
+            <Card key={item.id} style={{padding: '20px', marginBottom: '10px'}}
+              onClick={()=> {this.addToUserList(item)}}>
               <Col>
               <Card.Title>{item.name}</Card.Title>
               <div style={styles.buttondiv}>
@@ -102,14 +140,45 @@ class App extends Component {
       )
     }
   }
-
-  render(){
-    console.log(this.state.deadline);
-    
+  renderUserList() {
+    if (this.state.userList.length > 0) {
+      return (
+        this.state.userList.map((item) => (
+          <Card key={item.id} style={{ padding: '20px', marginBottom: '10px', backgroundColor:this.state.color}}>
+            <Col>
+              <Card.Title>{item.name}</Card.Title>
+              <div style={styles.buttondiv}>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  style={{ color: 'red', marginLeft: '10px' }}
+                  onClick={() => this.removeFromUserList(item)}
+                />
+              </div>
+            </Col>
+            <Card.Text>
+              Entrega: {item.deliveryTime.formatted12}<br />
+              Duração: {item.executionTime}h
+              </Card.Text>
+          </Card>
+        ))
+      )
+    } else {
+      return (
+        <span>Adicione aqui sua resposta!!</span>
+      )
+    }
+  }
+  
+  render(){    
     return(
       <Container>  
         <h1 style={{marginTop: '20px'}}>Minimo de Atraso</h1>
 
+        <Result
+          answer={this.state.answer}
+          show={this.state.showAnswer}
+          cancel={() => this.setState({ showAnswer: false })}
+          isCorrect={this.state.isCorrect}/>
         <Forms
           show={this.state.showForm}
           name={this.state.name}
@@ -137,19 +206,26 @@ class App extends Component {
         </Col>
 
         <hr/>
+        <Container>
+        <Row>
 
-        {
-          this.state.showResult?
-          <div>
-            <h2>Ordem de mínimo atraso:</h2>
-            {this.renderList(this.state.answer)}
-          </div>
-          :
-          <div>
+          <Col>
             <h2>Lista de tarefas:</h2>
-            {this.renderList(this.state.activities)}
-          </div>
-        }
+          </Col>
+          <Col>
+            <h2>Tentativa de ordem de mínimo atraso:</h2>
+          </Col>
+        </Row>
+        <Row>
+        <Col>
+            {this.renderOGList(this.state.activities)}
+        </Col>
+        <Col>
+            {this.renderUserList(this.state.answer)}
+        </Col>
+        </Row>
+        </Container>
+        
 
       </Container>
   );
